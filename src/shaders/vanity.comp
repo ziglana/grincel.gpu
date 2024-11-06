@@ -1,0 +1,54 @@
+#version 450
+
+layout(local_size_x = 256) in;
+
+layout(set = 0, binding = 0) buffer KeyBuffer {
+    uint keys[];
+};
+
+layout(push_constant) uniform PushConstants {
+    uint pattern_length;
+    uint fixed_chars[8];  // Pattern characters
+    uint mask[8];        // Mask for fixed positions (1) vs wildcards (0)
+};
+
+// Ed25519 constants
+const uint L[32] = uint[32](
+    0x10000000, 0x00000000, 0x00000000, 0x00000000,
+    0x00000000, 0x00000000, 0x00000000, 0x00000000,
+    0x14def9de, 0xa2f79cd6, 0x5812631a, 0x5cf5d3ed,
+    0x20000000, 0x00000000, 0x00000000, 0x00000000
+);
+
+void main() {
+    uint gid = gl_GlobalInvocationID.x;
+    
+    // Generate random seed based on global ID and timestamp
+    uint seed[8];
+    for (int i = 0; i < 8; i++) {
+        seed[i] = gid ^ fixed_chars[i];
+    }
+    
+    // Generate Ed25519 keypair
+    uint[32] private_key;
+    uint[32] public_key;
+    ed25519_generate_keypair(seed, private_key, public_key);
+    
+    // Check if public key matches pattern and mask
+    bool matches = true;
+    for (uint i = 0; i < pattern_length; i++) {
+        if (mask[i] == 1 && public_key[i] != fixed_chars[i]) {
+            matches = false;
+            break;
+        }
+    }
+    
+    // Store result if pattern matches
+    if (matches) {
+        uint offset = gid * 64;
+        for (uint i = 0; i < 32; i++) {
+            keys[offset + i] = private_key[i];
+            keys[offset + 32 + i] = public_key[i];
+        }
+    }
+}

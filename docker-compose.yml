@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  grincel:
+    build: .
+    environment:
+      - VANITY_PATTERN=${VANITY_PATTERN:-cafe}
+      - IGNORE_CASE=${IGNORE_CASE:-false}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

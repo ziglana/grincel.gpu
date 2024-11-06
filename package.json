@@ -1,0 +1,20 @@
+{
+  "name": "grincel",
+  "version": "1.0.0",
+  "description": "GPU-accelerated Solana vanity address generator",
+  "private": true,
+  "scripts": {
+    "build": "zig build",
+    "test": "zig test src/test/*.zig",
+    "dev": "zig build run"
+  },
+  "keywords": [
+    "solana",
+    "vanity",
+    "address",
+    "gpu",
+    "zig"
+  ],
+  "author": "",
+  "license": "Unlicense"
+}
