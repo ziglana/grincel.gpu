@@ -1,4 +1,5 @@
 const std = @import("std");
+const crypto = std.crypto;
 
 pub const Ed25519 = struct {
     pub const KeyPair = struct {
@@ -7,21 +8,19 @@ pub const Ed25519 = struct {
     };
 
     pub fn generateKeypair(seed: []const u8) KeyPair {
-        var public_key: [32]u8 = undefined;
-        var private_key: [64]u8 = undefined;
-        
-        // Ed25519 key generation
-        ed25519_create_keypair(&public_key, &private_key, seed);
-        
-        return KeyPair{
-            .public = public_key,
-            .private = private_key,
-        };
-    }
+        var key_pair: KeyPair = undefined;
 
-    extern fn ed25519_create_keypair(
-        public_key: *[32]u8,
-        private_key: *[64]u8,
-        seed: [*]const u8,
-    ) void;
+        // Create a key pair from the seed
+        var kp = crypto.sign.Ed25519.KeyPair.create(seed[0..32].*) catch unreachable;
+
+        // Copy the public key bytes
+        const pub_bytes = kp.public_key.toBytes();
+        @memcpy(&key_pair.public, &pub_bytes);
+
+        // Copy the secret key bytes
+        const secret_bytes = kp.secret_key.toBytes();
+        @memcpy(&key_pair.private, &secret_bytes);
+
+        return key_pair;
+    }
 };

@@ -1,5 +1,6 @@
 const std = @import("std");
 const builtin = @import("builtin");
+const SearchState = @import("search_state.zig").SearchState;
 
 pub const GpuBackend = enum {
     vulkan,
@@ -41,7 +42,7 @@ pub const GpuManager = struct {
         }
     }
 
-    pub fn dispatchCompute(self: *GpuManager, state: *SearchState, workgroup_size: u32) !void {
+    pub fn dispatchCompute(self: *GpuManager, state: ?*SearchState, workgroup_size: u32) !void {
         switch (self.backend) {
             .vulkan => return self.impl.vulkan.dispatchCompute(state, workgroup_size),
             .metal => return self.impl.metal.dispatchCompute(state, workgroup_size),

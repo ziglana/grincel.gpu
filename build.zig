@@ -6,28 +6,27 @@ pub fn build(b: *std.Build) void {
 
     const exe = b.addExecutable(.{
         .name = "grincel",
-        .root_source_file = .{ .path = "src/main.zig" },
+        .root_source_file = .{ .cwd_relative = "src/main.zig" },
         .target = target,
         .optimize = optimize,
     });
 
     // System libraries
     exe.linkSystemLibrary("c");
-    
-    // Detect OS and link appropriate GPU libraries
-    if (target.isDarwin()) {
-        exe.linkSystemLibrary("Metal");
-        exe.linkSystemLibrary("QuartzCore");
+
+    // Platform specific libraries
+    if (target.result.os.tag == .macos) {
+        exe.addFrameworkPath(.{ .cwd_relative = "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks" });
+        exe.addSystemIncludePath(.{ .cwd_relative = "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include" });
         exe.linkFramework("Metal");
         exe.linkFramework("Foundation");
-        exe.addIncludePath("deps/MoltenVK/include");
-        exe.linkSystemLibrary("MoltenVK");
+        exe.linkFramework("QuartzCore");
     } else {
         exe.linkSystemLibrary("vulkan");
     }
-    
-    exe.addIncludePath("deps/ed25519/src");
-    
+
+    exe.addIncludePath(.{ .cwd_relative = "deps/ed25519/src" });
+
     b.installArtifact(exe);
 
     const run_cmd = b.addRunArtifact(exe);

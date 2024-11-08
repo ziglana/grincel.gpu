@@ -4,6 +4,7 @@ const Ed25519 = @import("ed25519.zig").Ed25519;
 const Benchmark = @import("benchmark.zig").Benchmark;
 const Pattern = @import("pattern.zig").Pattern;
 const PatternOptions = @import("pattern.zig").PatternOptions;
+const SearchState = @import("search_state.zig").SearchState;
 
 const MAX_DEVICES = 8;
 const WORKGROUP_SIZE = 256;
@@ -17,14 +18,8 @@ pub fn main() !void {
     var gpu = try GpuManager.init(allocator);
     defer gpu.deinit();
 
-    // Load appropriate shader based on backend
-    const shader_code = switch (gpu.backend) {
-        .vulkan => @embedFile("shaders/vanity.spv"),
-        .metal => @embedFile("shaders/vanity.metallib"),
-    };
-    
-    const pipeline = try gpu.createComputePipeline(shader_code);
-    defer pipeline.deinit();
+    // For now, skip shader loading since we're using stub implementations
+    try gpu.createComputePipeline("");
 
     // Get pattern and options
     const raw_pattern = try std.process.getEnvVarOwned(allocator, "VANITY_PATTERN");
@@ -33,16 +28,16 @@ pub fn main() !void {
     const ignore_case = blk: {
         const case_env = std.process.getEnvVarOwned(allocator, "IGNORE_CASE") catch "";
         defer allocator.free(case_env);
-        break :blk std.mem.eql(u8, case_env, "1") or 
-                std.mem.eql(u8, case_env, "true") or 
-                std.mem.eql(u8, case_env, "yes");
+        break :blk std.mem.eql(u8, case_env, "1") or
+            std.mem.eql(u8, case_env, "true") or
+            std.mem.eql(u8, case_env, "yes");
     };
 
     var pattern = try Pattern.init(allocator, raw_pattern, .{ .ignore_case = ignore_case });
     defer pattern.deinit();
 
     std.debug.print("Using GPU backend: {s}\n", .{@tagName(gpu.backend)});
-    std.debug.print("Pattern: {s} ({} fixed characters)\n", .{pattern.raw, pattern.fixed_chars.len});
+    std.debug.print("Pattern: {s} ({} fixed characters)\n", .{ pattern.raw, pattern.fixed_chars.len });
     std.debug.print("Case-sensitive: {}\n", .{!pattern.options.ignore_case});
 
     // Run benchmark if --benchmark flag is present
@@ -65,7 +60,7 @@ pub fn main() !void {
 
     // Main search loop
     while (!search_state.found) {
-        try gpu.dispatchCompute(search_state, WORKGROUP_SIZE);
+        try gpu.dispatchCompute(&search_state, WORKGROUP_SIZE);
         try search_state.checkResults();
     }
 

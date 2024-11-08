@@ -16,14 +16,14 @@ pub const Pattern = struct {
         var fixed_chars = try allocator.alloc(u8, pattern.len);
         var fixed_count: usize = 0;
 
-        for (pattern) |c, i| {
+        for (pattern, 0..) |c, i| {
             if (c == '?') {
                 mask[i] = false;
             } else {
                 mask[i] = true;
-                fixed_chars[fixed_count] = if (options.ignore_case) 
-                    std.ascii.toLower(c) 
-                else 
+                fixed_chars[fixed_count] = if (options.ignore_case)
+                    std.ascii.toLower(c)
+                else
                     c;
                 fixed_count += 1;
             }
@@ -47,13 +47,13 @@ pub const Pattern = struct {
     pub fn matches(self: Pattern, address: []const u8) bool {
         if (address.len < self.raw.len) return false;
 
-        for (self.raw) |c, i| {
+        for (self.raw, 0..) |c, i| {
             if (self.mask[i]) {
                 const addr_char = if (self.options.ignore_case)
                     std.ascii.toLower(address[i])
                 else
                     address[i];
-                
+
                 const pattern_char = if (self.options.ignore_case)
                     std.ascii.toLower(c)
                 else

@@ -43,12 +43,12 @@ pub const Benchmark = struct {
         }
 
         const actual_duration = std.time.milliTimestamp() - start_time;
-        const attempts_per_second = @intToFloat(f64, total_attempts) / (@intToFloat(f64, actual_duration) / 1000.0);
+        const attempts_per_second = @as(f64, @floatFromInt(total_attempts)) / (@as(f64, @floatFromInt(actual_duration)) / 1000.0);
 
         return BenchmarkResult{
             .attempts_per_second = attempts_per_second,
             .total_attempts = total_attempts,
-            .duration_ms = @intCast(u64, actual_duration),
+            .duration_ms = @intCast(actual_duration),
             .pattern = pattern,
         };
     }
