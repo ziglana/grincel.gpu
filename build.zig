@@ -21,6 +21,34 @@ pub fn build(b: *std.Build) void {
         exe.linkFramework("Metal");
         exe.linkFramework("Foundation");
         exe.linkFramework("QuartzCore");
+
+        // Add optional Metal shader compilation
+        const shader_step = b.step("shader", "Compile Metal shader");
+        const metal_shader = b.addSystemCommand(&[_][]const u8{
+            "/usr/bin/env",
+            "xcrun",
+            "-sdk",
+            "macosx",
+            "metal",
+            "-c",
+            "src/shaders/vanity.metal",
+            "-o",
+            "src/shaders/vanity.air",
+        });
+        shader_step.dependOn(&metal_shader.step);
+
+        const metal_lib = b.addSystemCommand(&[_][]const u8{
+            "/usr/bin/env",
+            "xcrun",
+            "-sdk",
+            "macosx",
+            "metallib",
+            "src/shaders/vanity.air",
+            "-o",
+            "src/shaders/vanity.metallib",
+        });
+        metal_lib.step.dependOn(&metal_shader.step);
+        shader_step.dependOn(&metal_lib.step);
     } else {
         exe.linkSystemLibrary("vulkan");
     }
@@ -30,8 +58,6 @@ pub fn build(b: *std.Build) void {
     b.installArtifact(exe);
 
     const run_cmd = b.addRunArtifact(exe);
-    run_cmd.step.dependOn(b.getInstallStep());
-
     const run_step = b.step("run", "Run the vanity address generator");
     run_step.dependOn(&run_cmd.step);
 }
