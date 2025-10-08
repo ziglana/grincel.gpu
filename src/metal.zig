@@ -5,15 +5,12 @@ const Base58 = @import("base58.zig").Base58;
 
 pub const Metal = struct {
     allocator: std.mem.Allocator,
-    prng: std.rand.DefaultPrng,
     attempts: u64,
     start_time: i64,
 
     pub fn init(allocator: std.mem.Allocator) !Metal {
-        const seed = @as(u64, @truncate(@as(u128, @bitCast(std.time.nanoTimestamp()))));
         return Metal{
             .allocator = allocator,
-            .prng = std.rand.DefaultPrng.init(seed),
             .attempts = 0,
             .start_time = std.time.milliTimestamp(),
         };
@@ -38,9 +35,7 @@ pub const Metal = struct {
         while (i < 256) : (i += 1) {
             // Generate random seed
             var seed: [32]u8 = undefined;
-            for (0..32) |j| {
-                seed[j] = self.prng.random().int(u8);
-            }
+            try std.crypto.random.bytes(&seed);
 
             // Generate keypair
             const keypair = Ed25519.generateKeypair(&seed);
